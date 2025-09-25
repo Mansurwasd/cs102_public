@@ -1,4 +1,5 @@
 """calculator tests"""
+
 import unittest
 from src.lab1 import calculator
 
