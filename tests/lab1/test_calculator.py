@@ -1,6 +1,6 @@
+"""calculator tests"""
 import unittest
 from src.lab1 import calculator
-
 
 class CalculatorTestCase(unittest.TestCase):
     """класс тестов"""
