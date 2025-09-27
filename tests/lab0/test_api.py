@@ -1,6 +1,6 @@
 """модуль для отправки запросов в api"""
 
-from asgi_testclient import TestClient
+from fastapi.testclient import TestClient
 from src.lab0.restfull_api import app
 
 client = TestClient(app)
