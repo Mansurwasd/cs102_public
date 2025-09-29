@@ -18,12 +18,14 @@ def encrypt_vigenere(plaintext: str, keyword: str) -> str:
     >>> encrypt_vigenere("ATTACKATDAWN", "LEMON")
     'LXFOPVEFRNHR'
     """
+    if keyword == "":
+        raise ValueError("строка ключа не может быть пустой")
     k = 0
     while len(keyword)<len(plaintext):
         keyword+=keyword[k]
         k+=1
     ciphertext = ""
-    for letter, i in enumerate(plaintext):
+    for i, letter in enumerate(plaintext):
         if letter in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
             shift = upper[keyword[i]]
             if ord(letter)+ shift > 90:
@@ -51,12 +53,14 @@ def decrypt_vigenere(ciphertext: str, keyword: str) -> str:
     >>> decrypt_vigenere("LXFOPVEFRNHR", "LEMON")
     'ATTACKATDAWN'
     """
+    if keyword == "":
+        raise ValueError("строка ключа не может быть пустой")
     k = 0
     while len(keyword)<len(ciphertext):
         keyword+=keyword[k]
         k+=1
     plaintext = ""
-    for letter, i in enumerate(ciphertext):
+    for i, letter in enumerate(ciphertext):
         if letter in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
             shift = upper[keyword[i]]
             if ord(letter)-shift < 65:
