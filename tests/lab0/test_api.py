@@ -18,20 +18,39 @@ def test_can_get_items():
 def create_new_order_pattern(user_id, test_id):
     """шаблон заказа для тестов"""
     return {
-        "user_id": user_id,
-        "order_id": test_id,
-        "price": 100,
-        "delivery_date": "25.10.2007",
-        "number_of_items": 2
+        "userId": user_id,
+        "orderId": test_id,
+        "totalPriceCents": 100,
+        "placingDate": "25.10.2007",
+        "items": [
+            {
+                "cartItemId": "1",
+                "deliveryDate": "27.10.2007",
+                "quantity": 2
+            },
+            {
+                "cartItemId": "2",
+                "deliveryDate": "29.10.2007",
+                "quantity": 1
+            }
+        ]
     }
 
-def create_new_item_pattern(order_id, test_id):
+def create_new_item_pattern(test_id):
     """шаблон предмета для тестов"""
     return {
-        "name": "basketball",
-        "item_id": test_id,
-        "order_id": order_id,
-        "price": 100
+        "itemId": test_id,
+        "image": "test_path",
+        "name": "test_name",
+        "rating": {
+            "stars": 4.5,
+            "count": 87
+        },
+        "priceCents": 1000,
+        "keywords": ["socks", "sports", "apparel"],
+        "type": "clothing",
+        "sizeChartLink": "images/clothing-size-chart.png"
+
     }
 
 def test_can_create_order():
@@ -49,10 +68,9 @@ def test_can_create_order():
 
 def test_can_create_item():
     """тест, может ли создать предмет"""
-    order_id = "123"
     test_id = "321"
-    item = create_new_item_pattern(order_id, test_id)
-    post_responce = client.post("/items", json=item)
+    item = create_new_item_pattern(test_id)
+    post_responce = client.post("/items", json=[item])
     assert post_responce.status_code == 200
     get_responce = client.get("/items/" + test_id)
     assert get_responce.status_code == 200
@@ -66,11 +84,22 @@ def test_can_change_order():
     test_id = "123"
     order = create_new_order_pattern(user_id, test_id)
     new_order = {
-        "user_id": order["user_id"],
-        "order_id": order["order_id"],
-        "price": 100,
-        "delivery_date": "25.10.2007",
-        "number_of_items": 3
+        "userId": order["userId"],
+        "orderId": order["orderId"],
+        "totalPriceCents": 200,
+        "placingDate": "30.10.2007",
+        "items": [
+            {
+                "cartItemId": "6",
+                "deliveryDate": "1.11.2007",
+                "quantity": 3
+            },
+            {
+                "cartItemId": "7",
+                "deliveryDate": "3.11.2007",
+                "quantity": 1
+            },
+        ]
     }
     post_responce = client.post("/orders", json=order)
     assert post_responce.status_code == 200
@@ -84,16 +113,20 @@ def test_can_change_order():
 
 def test_can_change_item():
     """тест, может ли изменить поля предмета"""
-    order_id = "321"
     test_id = "123"
-    item = create_new_item_pattern(order_id, test_id)
+    item = create_new_item_pattern(test_id)
     new_item = {
-        "name": "basketball",
-        "item_id": item["item_id"],
-        "order_id": item["order_id"],
-        "price": 120
+        "itemId": item["itemId"],
+        "image": "test_path",
+        "name": "test_name",
+        "rating": {
+            "stars": 4.6,
+            "count": 90
+        },
+        "priceCents": 1200,
+        "keywords": ["mango", "mustard", "67"],
     }
-    post_responce = client.post("/items", json=item)
+    post_responce = client.post("/items", json=[item])
     assert post_responce.status_code == 200
     put_responce = client.put("/items/" + test_id, json=new_item)
     assert put_responce.status_code == 200
@@ -129,32 +162,4 @@ def test_can_get_orders_of_user():
     delete_responce2 = client.delete("/orders/" + second_test_id)
     assert delete_responce2.status_code == 200
     delete_responce3 = client.delete("/orders/" + third_test_id)
-    assert delete_responce3.status_code == 200
-
-def test_can_get_items_of_order():
-    """тест, может ли найти все предметы определенного заказа"""
-    order_id = "321"
-    test_id = "123"
-    second_test_id = "1"
-    third_test_id = "2"
-    second_user_id = "1"
-    item1 = create_new_item_pattern(order_id, test_id)
-    item2 = create_new_item_pattern(order_id, second_test_id)
-    item3 = create_new_item_pattern(second_user_id, third_test_id)
-    post_responce1 = client.post("/items", json=item1)
-    assert post_responce1.status_code == 200
-    post_responce2 = client.post("/items", json=item2)
-    assert post_responce2.status_code == 200
-    post_responce3 = client.post("/items", json=item3)
-    assert post_responce3.status_code == 200
-    get_responce = client.get("/get_items_of_order/" + order_id)
-    assert get_responce.status_code == 200
-    assert len(get_responce.json()) == 2
-    assert get_responce.json()[0] == item1
-    assert get_responce.json()[1] == item2
-    delete_responce1 = client.delete("/items/" + test_id)
-    assert delete_responce1.status_code == 200
-    delete_responce2 = client.delete("/items/" + second_test_id)
-    assert delete_responce2.status_code == 200
-    delete_responce3 = client.delete("/items/" + third_test_id)
     assert delete_responce3.status_code == 200
