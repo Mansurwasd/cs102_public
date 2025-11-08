@@ -1,8 +1,10 @@
 import pathlib
 import typing as tp
+import random
+import multiprocessing
+import time
 
 T = tp.TypeVar("T")
-
 
 def read_sudoku(path: tp.Union[str, pathlib.Path]) -> tp.List[tp.List[str]]:
     """ Прочитать Судоку из указанного файла """
@@ -100,7 +102,11 @@ def find_empty_positions(grid: tp.List[tp.List[str]]) -> tp.Optional[tp.Tuple[in
     >>> find_empty_positions([['1', '2', '3'], ['4', '5', '6'], ['.', '8', '9']])
     (2, 0)
     """
-    pass
+    for i, row in enumerate(grid):
+        for j, val in enumerate(row):
+            if val == ".":
+                return (i, j)
+    return None
 
 
 def find_possible_values(grid: tp.List[tp.List[str]], pos: tp.Tuple[int, int]) -> tp.Set[str]:
@@ -113,28 +119,54 @@ def find_possible_values(grid: tp.List[tp.List[str]], pos: tp.Tuple[int, int]) -
     >>> values == {'2', '5', '9'}
     True
     """
-    pass
+    all_values = set("123456789")
+    used = set(get_row(grid, pos)) | set(get_col(grid, pos)) | set(get_block(grid, pos))
+    used.discard(".")
+    return all_values - used
 
 
 def solve(grid: tp.List[tp.List[str]]) -> tp.Optional[tp.List[tp.List[str]]]:
     """ Решение пазла, заданного в grid """
-    """ Как решать Судоку?
-        1. Найти свободную позицию
-        2. Найти все возможные значения, которые могут находиться на этой позиции
-        3. Для каждого возможного значения:
-            3.1. Поместить это значение на эту позицию
-            3.2. Продолжить решать оставшуюся часть пазла
+    """
     >>> grid = read_sudoku('puzzle1.txt')
     >>> solve(grid)
     [['5', '3', '4', '6', '7', '8', '9', '1', '2'], ['6', '7', '2', '1', '9', '5', '3', '4', '8'], ['1', '9', '8', '3', '4', '2', '5', '6', '7'], ['8', '5', '9', '7', '6', '1', '4', '2', '3'], ['4', '2', '6', '8', '5', '3', '7', '9', '1'], ['7', '1', '3', '9', '2', '4', '8', '5', '6'], ['9', '6', '1', '5', '3', '7', '2', '8', '4'], ['2', '8', '7', '4', '1', '9', '6', '3', '5'], ['3', '4', '5', '2', '8', '6', '1', '7', '9']]
     """
-    pass
+    pos = find_empty_positions(grid)
+    if pos is None:
+        return grid
+    row, col = pos
+    for val in sorted(find_possible_values(grid, pos)):
+        grid[row][col] = val
+        result = solve(grid)
+        if result is not None:
+            return result
+        grid[row][col] = "."
+    return None
 
 
 def check_solution(solution: tp.List[tp.List[str]]) -> bool:
     """ Если решение solution верно, то вернуть True, в противном случае False """
-    # TODO: Add doctests with bad puzzles
-    pass
+    size = len(solution)
+    n = int(size ** 0.5)
+    all_values = set("123456789")
+    for r in range(size):
+        row = solution[r]
+        if set(row) != all_values:
+            return False
+    for c in range(size):
+        col = [solution[r][c] for r in range(size)]
+        if set(col) != all_values:
+            return False
+    for br in range(0, size, n):
+        for bc in range(0, size, n):
+            block = []
+            for r in range(br, br+n):
+                for c in range(bc, bc+n):
+                    block.append(solution[r][c])
+            if set(block) != all_values:
+                return False
+    return True
 
 
 def generate_sudoku(N: int) -> tp.List[tp.List[str]]:
@@ -158,15 +190,38 @@ def generate_sudoku(N: int) -> tp.List[tp.List[str]]:
     >>> check_solution(solution)
     True
     """
-    pass
+    N = max(0, min(81, N))
+    grid = [["." for _ in range(9)] for _ in range(9)]
 
+    for k in range(0,9,3):
+        nums = list("123456789")
+        random.shuffle(nums)
+        for i in range(3):
+            for j in range(3):
+                grid[k+i][k+j] = nums.pop()
+
+    solution = solve(grid)
+    if solution is None:
+        grid = [["." for _ in range(9)] for _ in range(9)]
+        solution = solve(grid)
+    filled_positions = [(r,c) for r in range(9) for c in range(9)]
+    random.shuffle(filled_positions)
+    full = [row[:] for row in solution]
+    to_remove = 81 - N
+    for i in range(to_remove):
+        r,c = filled_positions[i]
+        full[r][c] = "."
+    return full
+
+
+def run_solve(filename: str) -> None:
+    grid = read_sudoku(filename)
+    start = time.time()
+    solve(grid)
+    end = time.time()
+    print(f"{filename}: {end-start}")
 
 if __name__ == "__main__":
-    for fname in ["puzzle1.txt", "puzzle2.txt", "puzzle3.txt"]:
-        grid = read_sudoku(fname)
-        display(grid)
-        solution = solve(grid)
-        if not solution:
-            print(f"Puzzle {fname} can't be solved")
-        else:
-            display(solution)
+    for filename in ("puzzle1.txt", "puzzle2.txt", "puzzle3.txt"):
+        p = multiprocessing.Process(target=run_solve, args=(filename,))
+        p.start()
